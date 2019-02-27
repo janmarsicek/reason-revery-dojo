@@ -3,33 +3,85 @@ open Revery.Math;
 open Revery.UI;
 open Revery.UI.Components;
 
+type view = {
+  by: string,
+  id: int,
+  score: int,
+  time: int,
+  title: string,
+  url: option(string),
+};
+
 module Story = {
   let component = React.component("Story");
+  let headerStyle = Style.[fontFamily("Roboto-Regular.ttf"), fontSize(18)];
+  let renderUrl = (url: option(string)) =>
+    switch (url) {
+    | Some("tst") =>
+      <View> <Text style=headerStyle text="my custom switch case" /> </View>
+    | Some(s) => <View> <Text style=headerStyle text=s /> </View>
+    | None => <View />
+    };
 
-  let createElement = (~children as _, ~story: StoryDao.t, ()) =>
+  let createElement = (~children as _, ~story: view, ()) =>
     component(hooks => {
       let storyStyle =
         Style.[padding(10), border(~color=Colors.white, ~width=1)];
-      let headerStyle =
-        Style.[fontFamily("Roboto-Regular.ttf"), fontSize(18)];
+
       let contentStyle =
         Style.[fontFamily("Roboto-Regular.ttf"), fontSize(12)];
       (
         hooks,
         <View style=storyStyle>
-          <View> <Text style=headerStyle text="Story header" /> </View>
-          <View> <Text style=contentStyle text="Story content" /> </View>
+          <View> <Text style=headerStyle text={story.title} /> </View>
+          <View> <Text style=headerStyle text={story.by} /> </View>
+          <View>
+            <Text style=headerStyle text={string_of_int(story.score)} />
+          </View>
+          <View>
+            <Text style=headerStyle text={string_of_int(story.time)} />
+          </View>
+          {renderUrl(story.url)}
         </View>,
       );
     });
 };
+
+let mockData: list(view) = [
+  {title: "Title1", by: "Someone", id: 1, score: 10, time: 1, url: None},
+  {
+    title: "Title2",
+    by: "Someone 2",
+    id: 2,
+    score: 16,
+    time: 10,
+    url: Some("https://github.com/romanschejbal/electron-blog"),
+  },
+  {
+    title: "Title3",
+    by: "Someone 3",
+    id: 3,
+    score: 14,
+    time: 100,
+    url: Some("tst"),
+  },
+  {title: "Title4", by: "Someone 4", id: 4, score: 13, time: 1000, url: None},
+  {
+    title: "Title5",
+    by: "Someone 5",
+    id: 5,
+    score: 17,
+    time: 10000,
+    url: None,
+  },
+];
 
 module StoryList = {
   let component = React.component("StoryList");
 
   let createElement = (~children as _, ()) =>
     component(hooks => {
-      let (stories, setStories, hooks) = React.Hooks.state([], hooks);
+      let (stories, setStories, hooks) = React.Hooks.state(mockData, hooks);
       let hooks =
         React.Hooks.effect(
           OnMount,
@@ -70,7 +122,13 @@ let init = app => {
       backgroundColor(Colors.black),
     ];
 
-  let render = () => <View style=containerStyle> <StoryList /> </View>;
+  let scrollViewStyle =
+    Style.[height(400), width(450), border(~width=1, ~color=Colors.red)];
+
+  let render = () =>
+    <View style=containerStyle>
+      <ScrollView style=scrollViewStyle> <StoryList /> </ScrollView>
+    </View>;
 
   UI.start(win, render);
 };
