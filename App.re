@@ -3,53 +3,6 @@ open Revery.Math;
 open Revery.UI;
 open Revery.UI.Components;
 
-// type view = {
-//   by: string,
-//   id: int,
-//   score: int,
-//   time: int,
-//   title: string,
-//   url: option(string),
-// };
-
-// module StoryDao = {
-//   open Yojson.Basic.Util;
-
-//   type view = {
-//     by: string,
-//     id: int,
-//     score: int,
-//     time: int,
-//     title: string,
-//     url: option(string),
-//   };
-
-//   type t = view;
-
-//   let fetchTopStories = () => {
-//     let json = Yojson.Basic.from_file("./stories.json");
-//     json
-//     |> to_list
-//     |> List.map(storyDetail =>
-//          {
-//            by: member("by", storyDetail) |> to_string,
-//            id: member("id", storyDetail) |> to_int,
-//            title: member("title", storyDetail) |> to_string,
-//            score: member("score", storyDetail) |> to_int,
-//            time: member("time", storyDetail) |> to_int,
-//            url: member("url", storyDetail) |> to_string_option,
-//          }
-//        );
-//   };
-
-//   let view_title = story => story.title;
-//   let view_by = story => story.by;
-//   let view_id = story => story.id;
-//   let view_time = story => story.time;
-//   let view_url = story => story.url;
-//   let view_score = story => story.score;
-// };
-
 module Story = {
   let component = React.component("Story");
   let headerStyle = Style.[fontFamily("Roboto-Regular.ttf"), fontSize(18)];
@@ -61,7 +14,7 @@ module Story = {
     | None => <View />
     };
 
-  let createElement = (~children as _, ~story: StoryDao.t, ()) =>
+  let createElement = (~children as _, ~story, ()) =>
     component(hooks => {
       let storyStyle =
         Style.[padding(10), border(~color=Colors.white, ~width=1)];
@@ -71,55 +24,37 @@ module Story = {
       (
         hooks,
         <View style=storyStyle>
-          <View> <Text style=headerStyle text={story.title} /> </View>
-          <View> <Text style=headerStyle text={story.by} /> </View>
           <View>
-            <Text style=headerStyle text={string_of_int(story.score)} />
+            <Text style=headerStyle text={StoryDao.view_title(story)} />
           </View>
           <View>
-            <Text style=headerStyle text={string_of_int(story.time)} />
+            <Text style=headerStyle text={StoryDao.view_by(story)} />
           </View>
-          {renderUrl(story.url)}
+          <View>
+            <Text
+              style=headerStyle
+              text={string_of_int(StoryDao.view_score(story))}
+            />
+          </View>
+          <View>
+            <Text
+              style=headerStyle
+              text={string_of_int(StoryDao.view_time(story))}
+            />
+          </View>
+          {renderUrl(StoryDao.view_url(story))}
         </View>,
       );
     });
 };
-
-let mockData: list(StoryDao.t) = [
-  {title: "Title1", by: "Someone", id: 1, score: 10, time: 1, url: None},
-  {
-    title: "Title2",
-    by: "Someone 2",
-    id: 2,
-    score: 16,
-    time: 10,
-    url: Some("https://github.com/romanschejbal/electron-blog"),
-  },
-  {
-    title: "Title3",
-    by: "Someone 3",
-    id: 3,
-    score: 14,
-    time: 100,
-    url: Some("tst"),
-  },
-  {title: "Title4", by: "Someone 4", id: 4, score: 13, time: 1000, url: None},
-  {
-    title: "Title5",
-    by: "Someone 5",
-    id: 5,
-    score: 17,
-    time: 10000,
-    url: None,
-  },
-];
 
 module StoryList = {
   let component = React.component("StoryList");
 
   let createElement = (~children as _, ()) =>
     component(hooks => {
-      let (stories, setStories, hooks) = React.Hooks.state(mockData, hooks);
+      let (stories, setStories, hooks) =
+        React.Hooks.state(StoryDao.fetchTopStories(), hooks);
       let hooks =
         React.Hooks.effect(
           OnMount,
